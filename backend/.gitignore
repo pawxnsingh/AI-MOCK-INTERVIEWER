@@ -5,3 +5,7 @@ venv
 data
 
 __pycache__
+
+docs
+tests
+backup_requirements_txt

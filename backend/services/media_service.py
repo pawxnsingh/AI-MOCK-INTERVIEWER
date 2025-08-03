@@ -34,11 +34,10 @@ class MediaManagementService:
             Dictionary containing the deterministic UUID and metadata
         """
         try:            
-            # Calculate file hash
             file_hash = hashlib.sha256(file_binary).hexdigest()
             
-            # Extract file metadata
             mime_type, _ = mimetypes.guess_type(file_name)
+            
             if not mime_type:
                 mime_type = "application/octet-stream"
                 
@@ -46,11 +45,8 @@ class MediaManagementService:
             created_at = now_dt
             modified_at = now_dt
             
-            # Create directory structure
             base_dir = Path("data/raw")
 
-            # Create deterministic UUID using file hash and vendor info
-            # This ensures same file gets same UUID across uploads
             hash_unique_key = file_hash + user_uuid # linking user uuid with the hash so same file uploaded by different users get attached to only them
             media_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, hash_unique_key))
             
@@ -67,9 +63,7 @@ class MediaManagementService:
                 "file_hash": file_hash
             }
             
-            
-                        
-            # Check if file exists and compare hashes
+                   
             if save_path.exists():
                 with open(save_path, "rb") as f:
                     existing_hash = hashlib.sha256(f.read()).hexdigest()
@@ -135,20 +129,16 @@ class MediaManagementService:
         try:
             media_map_path = Path(MediaManagementService.MEDIA_MAP_FILE)
             
-            # Create parent directories if they don't exist
             media_map_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # Initialize or load existing media map
             if media_map_path.exists():
                 with open(media_map_path, 'r') as f:
                     media_map = json.load(f)
             else:
                 media_map = {}
             
-            # Add or update media mapping
             media_map[media_uuid] = metadata
             
-            # Save updated media map
             with open(media_map_path, 'w') as f:
                 json.dump(media_map, f, indent=2)
                 
@@ -209,7 +199,6 @@ class MediaManagementService:
             KeyError: If media_uuid is not found in the mapping
         """
         try:
-            # Get file metadata first
             metadata = MediaManagementService.get_media_metadata(media_uuid)
             file_path = Path(metadata["file_path"])
             
@@ -217,11 +206,9 @@ class MediaManagementService:
                 logger.error("[MediaManagementService | get_media_file] Media file not found at path: %s", file_path)
                 raise FileNotFoundError(f"Media file not found at path: {file_path}")
             
-            # Read and return file binary data
             with open(file_path, "rb") as f:
                 file_binary = f.read()
                 
-            # Verify file integrity using stored hash
             file_hash = hashlib.sha256(file_binary).hexdigest()
             if file_hash != metadata["file_hash"]:
                 logger.error("[MediaManagementService | get_media_file] File hash mismatch for UUID: %s", media_uuid)
@@ -248,11 +235,9 @@ class MediaManagementService:
             ValueError: If unable to delete the file
         """
         try:
-            # First get the metadata to verify vendor and get file path
             metadata = MediaManagementService.get_media_metadata(media_uuid)
             file_path = Path(metadata["file_path"])
             
-            # Try to delete the actual file
             if file_path.exists():
                 try:
                     file_path.unlink()  # Delete the file
@@ -260,15 +245,12 @@ class MediaManagementService:
                     logger.error("[MediaManagementService | delete_media] Failed to delete file: %s", str(e))
                     raise ValueError(f"Failed to delete file: {str(e)}")
                 
-            # Now remove the entry from mediaMap.json
             media_map_path = Path(MediaManagementService.MEDIA_MAP_FILE)
             with open(media_map_path, 'r') as f:
                 media_map = json.load(f)
             
-            # Remove the entry
             del media_map[media_uuid]
             
-            # Save updated media map
             with open(media_map_path, 'w') as f:
                 json.dump(media_map, f, indent=2)
                 
@@ -296,14 +278,11 @@ class MediaManagementService:
             UnicodeDecodeError: If the file cannot be decoded as UTF-8
         """
         try:
-            # Get file metadata first
             metadata = MediaManagementService.get_media_metadata(media_uuid)
             
-            # Get file binary
             file_binary = MediaManagementService.get_media_file(media_uuid)
             
             try:
-                # Try to decode as UTF-8
                 content = file_binary.decode('utf-8')
             except UnicodeDecodeError as e:
                 logger.error("[MediaManagementService | get_media_content] File is not valid UTF-8: %s", str(e))

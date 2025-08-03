@@ -1,17 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
 import stripe
 from typing import List
 import uuid
-from datetime import datetime
 from models.base import get_db_session
 from models.payments import Payments
-
+from sqlalchemy import func, String, cast
 from models.users import User
 from utils.datetime_helper import StandardDT
 from config import config
-# from services.payment_service import get_payment_status
-# from stripeEndpoints import create_checkout_session
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -97,7 +93,6 @@ payment_router = APIRouter(
 
 @payment_router.get("/pricing/plans", response_model=List[dict])
 async def get_pricing_plans(request: Request):
-    """Get available pricing plans"""
     # user_token = request.state.bearer_token or None
     plans = [
         {
@@ -267,7 +262,7 @@ async def stripe_webhook(request: Request):
                 
                 payment = db.query(Payments).filter(
                     Payments.user_id == user_data.id,
-                    Payments.payment_details["payment_id"].astext == payment_id
+                    cast(func.json_extract(Payments.payment_details, '$.payment_id'), String) == payment_id
                 ).first()
 
                 if not payment:
@@ -287,16 +282,15 @@ async def stripe_webhook(request: Request):
 
             return {"status": "success"}
 
-        return {"status": "ignored"} # ignoring if the session type from stripe is not yet completed so in db it will still be in pending so should use some 
-    # frontend side confirmation api or something like that to confirm the payment
+        return {"status": "ignored"}
     except Exception: 
         logger.exception("[payment_router | stripe_webhook] :: caught exception ")
-        raise # todo :: does stripe need a status : error or something like that or does direct error throw work ? 
+        raise
    
 @payment_router.get("/payments/get/transactions")
 async def get_user_payment_transactions_api(req: Request):
     try: 
-        user_uuid = 'dc44c0ce-1475-546b-a25a-ec2574517171' # req.state.bearer_token 
+        user_uuid =  req.state.bearer_token 
         response_data = {}
         with get_db_session() as db: 
             asking_user = db.query(User).filter(User.uuid == user_uuid).first()

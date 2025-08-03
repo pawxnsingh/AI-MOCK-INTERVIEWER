@@ -17,15 +17,41 @@ def generate_with_gemini(
     stream: bool = False,  # Stream parameter to control streaming
     system_instruction: str = None,
 ) -> Any:
+    """
+    Generate content using Gemini with optional function calling support.
+
+    This function provides two modes for function calling:
+    1. Auto-execution: SDK handles function calls (auto_execute_functions=True)
+    2. Manual execution: Returns function calls for you to handle (auto_execute_functions=False)
+
+    Function calling can be configured using:
+    - tools: List of functions or schemas defining available functions
+    - tool_config: Control function calling behavior (mode: AUTO/ANY/NONE)
+    - auto_execute_functions: Whether to automatically execute function calls
+    - available_functions: Functions available for execution
+
+    Args:
+        prompt: Input text for the model
+        response_format: Expected response format as Pydantic model
+        tools: Available functions (as callables or schema declarations)
+        tool_config: Function calling configuration
+        auto_execute_functions: Whether to auto-execute function calls
+        available_functions: Functions available for execution
+        model: Gemini model to use
+        stream: Whether to return a streaming response iterator
+
+    Returns:
+        - With stream=True: Iterator yielding response chunks
+        - With auto_execute_functions=True: Final text after executing functions
+        - With auto_execute_functions=False: Function call data or text response
+        - With response_format: Parsed response in specified format
+    """
     try:
-        
         client = Client(api_key=config.GEMINI_API_KEY)
-        temperature = 0.5
         # Create configuration for request
         request_config = {
-            'temperature': temperature,
+            'temperature': 0.5, # todo :: agent.config can return this if set by user 
         }
-        logger.info("[generate_with_gemini] :: Temperature : %s", str(temperature))
         
         # Add response format if provided
         if response_format:
@@ -114,6 +140,7 @@ def generate_with_gemini(
                         return response_format.model_validate_json(response)
                     except Exception as e:
                         # If parsing fails, return the raw text and log the error
+                        logger.warning("[generate_with_gemini] :: Failed to parse response as %s. Returning raw response.", response_format.__name__)
                         return response
                 return response
             else:

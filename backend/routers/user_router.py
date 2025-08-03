@@ -1,7 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-from services.user_services import create_or_get_user, get_user_profile
-from pydantic import BaseModel
+from services.user_services import create_or_get_user, get_all_referred_users, get_user_profile, link_referral_code
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -52,15 +50,38 @@ user_router = APIRouter(prefix="/user", tags=["user"])
 async def get_user_profile_api(request: Request):
     try: 
         user_token = request.state.bearer_token or None
-        print("bearer token :: ", user_token)
         
         result = get_user_profile(user_token)
-        
-        print("user profile :: ")
-        print(result)
-        
+                
         return result 
     except Exception: 
         logger.exception("[user_router | get_user_profile_api] :: caught exception")
         raise HTTPException(status_code=500)
-    
+
+@user_router.post("/referral/link")
+async def link_users_referral_code_api(request: Request, req: dict): 
+    try: 
+        user_token = request.state.bearer_token
+        to_refer_code = req.get("referralCode", None)
+        
+        if not to_refer_code: 
+            raise HTTPException(status_code=400)
+        
+        result = link_referral_code(user_token, to_refer_code)
+        
+        return result
+    except Exception:
+        logger.exception("[user_router | link_users_referral_code] :: caught exception")
+        raise HTTPException(status_code=500)
+        
+@user_router.get("/referral/all")
+async def get_all_referred_users_api(request : Request):
+    try: 
+        user_token = request.state.bearer_token
+        
+        result = get_all_referred_users(user_token)
+        
+        return result 
+    except Exception: 
+        logger.exception("[user_router | gert_all_referred_users_api] :: caught exception")
+        raise HTTPException(status_code=500)            

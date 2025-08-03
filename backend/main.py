@@ -1,20 +1,19 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from routers.media_router import media_api_router
-from routers.parser_router import parser_api_router
 from routers.agent_management_router import agent_management_router
 from routers.user_router import user_router
-from routers.workflow_router import workflow_router
-from routers.test_router import test_router
 from routers.platform_router import platform_router
+from routers.ent_router import ent_router
 import logging
 import sys
 # from utils.auth_helper import AuthenticationMiddleware
-from routers.auth_router2 import auth_router
+from routers.auth_router import auth_router
+from routers.admin_router import router as admin_router
 from utils.path_helpers import get_log_path
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from routers.payment_router import payment_router
+from config import config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +44,6 @@ class BearerTokenMiddleware(BaseHTTPMiddleware):
             request.state.bearer_token = token  # attach token to request state
         else:
             request.state.bearer_token = None 
-            print("no auth token")
 
         response = await call_next(request)
         return response
@@ -54,12 +52,35 @@ app = FastAPI()
 
 exclude_paths = ["/login", "/register"]
 
+allowed_origins = []
+allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+allow_headers=["Authorization", "Content-Type", "Accept", "Origin"]
+
+if config.ENVIRONMENT == "development":
+    allowed_origins.append("*")   
+elif config.ENVIRONMENT == "production":
+    allowed_origins.extend([
+        "https://juggy.ai", 
+        "https://www.juggy.ai",
+        "http://localhost:3000"])
+elif config.ENVIRONMENT == "staging":
+    allowed_origins.extend([
+        "https://test.juggy.ai", 
+        "https://www.test.juggy.ai",
+        "http://localhost:3000"])
+elif config.ENVIRONMENT == "entprise":
+    allowed_origins.extend([
+        "https://recruiter.juggy.ai", 
+        "https://www.recruiter.juggy.ai",
+        "http://localhost:3000"])
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=allow_methods,
+    allow_headers=allow_headers,
 )
 # app.add_middleware(AuthenticationMiddleware, exclude_paths=exclude_paths)
 app.add_middleware(SessionMiddleware, secret_key='!secret') # todo :: setup in env but not used anywhere currently so less priority
@@ -72,16 +93,14 @@ async def log_requests(req: Request, call_next):
     res = await call_next(req)
     return res
 
-app.include_router(media_api_router, prefix="/api")
-app.include_router(parser_api_router, prefix="/api")
 app.include_router(agent_management_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
-app.include_router(workflow_router, prefix="/api")
-app.include_router(test_router, prefix="/api")
 app.include_router(platform_router, prefix="/api")
 app.include_router(auth_router)#, prefix="/api")
 app.include_router(payment_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(ent_router, prefix="/api")
 
 @app.get("/health")
 async def health_check():
-    return {"system" : "Backend" , "status": "Running"}
+    return {"system" : "Backend" , "status": "Running", "environment" : config.ENVIRONMENT }

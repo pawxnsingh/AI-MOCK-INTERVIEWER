@@ -4,9 +4,10 @@ from models.session_exchanges import SessionExchange
 from models.uploads import Upload
 from models.user_metrics import UserMetrics
 from models.platform_metrics import PlatformMetrics
-from models.users import User
+from models.users import User, userRoleEnum
 from models.sessions import Session
 from models.payments import Payments
+from models.organisations import Organisation
 
 __all__ = [
     "Agent",
@@ -15,7 +16,8 @@ __all__ = [
     "SessionExchange",
     "Upload",
     "UserMetrics",
-    "User",
+    "User", "userRoleEnum",
     "Session",
-    "Payments"
+    "Payments",
+    "Organisation"
 ]

@@ -1,14 +1,22 @@
-from sqlalchemy import Column, String, Boolean, Integer, JSON, DateTime
+from sqlalchemy import Column, String, Boolean, Integer, JSON, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from models.base import Base
 from utils.datetime_helper import StandardDT
+from enum import Enum
+
+class userRoleEnum(Enum):
+    USER = "USER"
+    EXTERNAL = "EXTERNAL"
+    INTERNAL = "INTERNAL"
+    RECRUITER = "RECRUITER"
+
 
 class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(String, nullable=False, unique=True)
-    username = Column(String, nullable=False, unique=True)
+    uuid = Column(String, nullable=False, unique=True, index=True)
+    username = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True, index=True)
     auth_data = Column(JSON, nullable=True)
     phone = Column(String, nullable=True)
@@ -18,6 +26,10 @@ class User(Base):
     created_at = Column(DateTime, default=StandardDT.get_iso_dt())
     last_login = Column(DateTime, default=StandardDT.get_iso_dt())
     payment_details = Column(JSON, nullable=True)
+    referral_code = Column(String)
+    referred_code = Column(String)
+    role = Column(String)
+    org_id = Column(Integer, ForeignKey("organisations.id"))
 
     uploads = relationship("Upload", back_populates="user", cascade="all, delete-orphan")
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
@@ -25,3 +37,4 @@ class User(Base):
     parsed_results = relationship("ParsedResult", back_populates="user")
     metrics = relationship("UserMetrics", back_populates="user")
     payments = relationship("Payments", back_populates="user", cascade="all, delete-orphan")
+    organisation = relationship("Organisation", foreign_keys=[org_id], back_populates="users")

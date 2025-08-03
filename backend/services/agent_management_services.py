@@ -16,6 +16,7 @@ class AgentManagementServices:
             name = args.get("name")
             received_version = args.get("version", "1.0.0")
             prompt = args.get("prompt")
+            org_id = args.get("org_id",None)
             
             version = received_version if received_version and received_version != "" else "1.0.0"
        
@@ -33,7 +34,8 @@ class AgentManagementServices:
                 uuid=agent_uuid,
                 prompt=prompt,
                 config=llm_config,
-                is_active=False
+                is_active=False if not org_id else True,
+                org_id= int(org_id) if org_id else None 
             )
             
             with get_db_session() as db:
@@ -61,6 +63,7 @@ class AgentManagementServices:
             received_version = args.get("version", None)
             prompt = args.get("prompt", None)
             llm_config = args.get("llmConfig", None)
+            org_id = args.get("org_id",None)
             
             version = received_version if received_version and received_version != "" else None
             
@@ -89,7 +92,8 @@ class AgentManagementServices:
                             "name" : name,
                             "prompt" : prompt,
                             "version" : version,
-                            "llmConfig" : llm_config
+                            "llmConfig" : llm_config,
+                            "org_id" : org_id if org_id else None
                         }
                         AgentManagementServices.create_agent(args)
                         return True, {"message" : f"new version = {version} for agent = {name} created."}

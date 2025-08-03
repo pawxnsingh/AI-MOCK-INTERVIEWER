@@ -83,3 +83,18 @@ def analyse_interview_workflow(args: dict):
     except Exception:
         logger.exception("[analyse_interview_workflow] :: caught exception")
         raise 
+    
+def ent_analyse_interview_workflow(args: dict): 
+    try: 
+        
+        # interview_analysis_agent_config = {
+        #     "name" : "ent_interview_analysis_agent", # receive the name aswell if not defined then use the default name 
+        #     "context" : args
+        # }
+
+        result, _ = AgentServices.generic_agent(args)#interview_analysis_agent_config) # save this llm metadata in session
+        
+        return result 
+    except Exception:
+        logger.exception("[analyse_interview_workflow] :: caught exception")
+        raise 

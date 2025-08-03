@@ -37,6 +37,14 @@ class Config:
         self.GOOGLE_LOGIN_REDIRECT_URL = os.getenv("GOOGLE_LOGIN_REDIRECT_URL")
         self.GOOGLE_POST_AUTH_REDIRECT_URL = os.getenv("GOOGLE_POST_AUTH_REDIRECT_URL")
         
+        # current environment 
+        self.ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+        
+        self.TEAMTAILOR_API_VERSION = os.getenv("TEAMTAILOR_API_VERSION") 
+        self.TEAM_TAILER_API_KEY = os.getenv("TEAM_TAILER_API_KEY")
+        
+        # vapi api key 
+        self.VAPI_PRIVATE_KEY = os.getenv("VAPI_PRIVATE_KEY")
 
 
 config = Config()
